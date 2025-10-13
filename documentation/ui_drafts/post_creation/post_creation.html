@@ -1,0 +1,75 @@
+<!DOCTYPE>
+<html>
+  <head>
+    <link rel="stylesheet" href = "post_creation.css"/>
+  </head>
+  <body>
+    <div id = "main">
+      <div id = "post-creation">
+        <div id = "header">
+          <a id = "home-button" href = "./post_creation.html">
+            <img id = "website-icon" src = "assets/logo.png" width = "32" height = "32"/>
+            <h2 id = "website-name">
+              Gay Audio
+            </h2>
+          </a>
+
+          <a id = "profile-button">
+            <div id = "profile-name">
+              Freyja-moth
+            </div>
+            <img id = "profile-icon" src = "assets/pfp.png" width = "32" height = "32"/>
+          </a>
+        </div>
+
+        <div id = "post-body">
+          <input placeholder = "Title" id = "title" class = "boxed-item hide-background no-outline">
+          </input>
+
+          <textarea placeholder = "Description" id = "description" class = "boxed-item hide-background no-outline">
+          </textarea>
+
+          <div id="related-content" class = "boxed-item">
+            <div class = "boxed-item content">
+              <img class = "icon" src="assets/writing.png" title="writing icons" width = "32" height = "32"/>
+              <a class = "title">A vampire takes you in the night</a>
+              <div class = "tag-list">
+                <span>[Vampire]</span>
+                <span>[Blood]</span>
+                <span>[All that cruel shit]</span>
+              </div>
+            </div>
+            <button class = "boxed-item hide-background">
+              +
+            </button>
+          </div>
+
+          <div id = "warning-area">
+            <span class = "title">Warnings</span>
+            <div id = "warnings" class = "boxed-item">
+              <div class = "warning">
+                <span>"A vampire takes you in the night" contains an unclosed * at <a class = "script-link">line 50, column 20</a>, this may be a formatting error</span>
+                <button class = "boxed-item hide-background ignore-button">
+                  Ignore
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id = "error-area">
+            <span class = "title">Errors</span>
+            <div id = "errors" class = "boxed-item">
+              <div class = "error">
+                <span>"A vampire takes you in the night" has tag [blood] without required tag [cutting]</span>
+              </div>
+            </div>
+          </div>
+
+          <button id = "sumbit" class = "boxed-item hide-background">
+            Sumbit
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

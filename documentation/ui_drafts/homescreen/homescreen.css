@@ -1,0 +1,228 @@
+@import url('https://unpkg.com/@catppuccin/palette/css/catppuccin.css');
+
+* {
+  color: var(--ctp-mocha-text)
+}
+
+.boxed-item {
+  border-style: solid;
+  border-width: 3px;
+  border-color: var(--ctp-mocha-lavender);
+}
+
+html, body {
+  display: flex;
+
+  width: 100%;
+  height: 100%;
+
+  padding: 0;
+  margin: 0;
+}
+
+#main {
+  display: flex;
+
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+#homepage {
+  display: grid;
+  width: 100%;
+  height: 100%;
+
+  grid-template-rows: max-content 1fr;
+  
+  /* The 25% is temporary becuase I can't find a way to make it work otherwise */
+  grid-template-columns: 1fr 25%;
+}
+
+#header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+
+  grid-column: span 2;
+
+  padding: 0.5vw;
+  background-color: var(--ctp-mocha-crust);
+}
+
+#home-button {
+  display: flex;
+  flex-direction: row;
+
+  align-items: center;
+
+  text-decoration: none;
+}
+
+#website-icon {
+  width: 48px;
+  height: 48px;
+}
+
+#website-name {
+  margin: 0;
+}
+
+#profile-button {
+  display: flex;
+  flex-direction: row;
+
+  align-items: center;
+
+  column-gap: 10px;
+
+  padding-left: 0.5%;
+  padding-right: 0.5%;
+  padding-top: 0.25%;
+  padding-bottom: 0.25%;
+}
+
+#post-list {
+  display: flex;
+  flex-direction: column;
+
+  row-gap: 2%;
+
+  padding: 2%;
+
+  background-color: var(--ctp-mocha-base);
+}
+
+.post {
+  display: grid;
+
+
+  grid-template-columns: 1fr max-content;
+  grid-template-rows: 1fr max-content 1fr;
+
+  height: max-content;
+
+  padding: 2%;
+}
+
+.post .title {
+  grid-column: 1;
+  grid-row: 1;
+
+  align-self: center;
+
+  margin: 0;
+
+  color: var(--ctp-mocha-red);
+}
+
+.post .description {
+  grid-column: span 2;
+  grid-row: 2;
+}
+
+.post .profile {
+  grid-column: 2;
+  grid-row: 1;
+
+  align-self: center;
+}
+
+.post .content-list {
+  display: flex;
+  flex-direction: column;
+
+
+  grid-column: span 2;
+  grid-row: 3;
+}
+
+.post .content-list .content {
+  display: grid;
+  grid-template-columns: max-content max-content 1fr max-content;
+
+  padding: 0.5%;
+  column-gap: 5px;
+
+  align-items: center;
+}
+
+
+.post .content-list .content .icon {
+  grid-column: 1;
+}
+
+.post .content-list .content .title {
+  grid-column: 2;
+}
+
+.post .content-list .content .tag-list {
+  grid-column: 4;
+}
+
+#filters {
+  display: flex;
+  flex-direction: column;
+
+  row-gap: 2%;
+
+  padding: 2%;
+
+  background-color: var(--ctp-mocha-mantle);
+}
+
+#filters #profile-select {
+  display: flex;
+
+  
+  justify-content: space-between;
+}
+
+#filters #profile-select #profile-text {
+  display: flex;
+  align-self: center;
+}
+
+#filters #profile-select #filter-profile {
+  font-size: 100%;
+  font-family: inherit;
+  padding: 1%;
+  background-color: transparent;
+}
+
+#filters .filter-option {
+  display: flex;
+
+  row-gap: 10px;
+
+  flex-direction: column;
+}
+
+#filters .tag-box {
+  display: flex;
+  height: max-content;
+
+  padding: 1.5%;
+
+  row-gap: 10px;
+  column-gap: 10px;
+}
+
+#filters .tag-box .tag {
+  padding: 1.5%;
+
+}
+
+#filters .tag-box .add-tag {
+  font-size: 100%;
+  font-family: inherit;
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+}
+
+#filters .tag-box .add-tag:hover {
+  color: var(--ctp-mocha-subtext0)
+}

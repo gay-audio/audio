@@ -1,0 +1,10 @@
+[package]
+name = "audio_data"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+derive_more = { version = "2.0.1", features = ["display"] }
+diesel = { version = "2.3.2", features = ["postgres", "uuid", "r2d2"] }
+serde = { version = "1.0.228", features = ["derive"] }
+uuid = { version = "1.18.1", features = ["v4", "serde"] }
