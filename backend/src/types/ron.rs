@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use mime::Mime;
 use serde::{Deserialize, Serialize};
 
@@ -9,13 +11,16 @@ use ron::{Error as RonError, de::SpannedError};
 
 pub struct Ron<T>(pub T);
 
+impl<T> Ron<T> {
+    pub fn into_inner(self) -> T {
+        self.0
+    }
+}
+
 impl<T> ContentType for Ron<T> {
     const NAME: &str = "ron";
-    fn content_type(mime: &Mime) -> bool {
-        matches!(
-            (mime.type_().as_str(), mime.subtype().as_str()),
-            ("text", "ron")
-        )
+    fn content_type() -> Mime {
+        Mime::from_str("text/ron").unwrap()
     }
 }
 impl<T: Serialize> SerializeResponder for Ron<T> {

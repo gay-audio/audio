@@ -1,14 +1,12 @@
 pub mod json;
 pub(super) mod macros;
 pub mod ron;
-mod serde;
 
 use mime::Mime;
-pub use serde::Serde;
 
 trait ContentType {
     const NAME: &str;
-    fn content_type(mime: &Mime) -> bool;
+    fn content_type() -> Mime;
 }
 trait SerializeResponder {
     type SerError;

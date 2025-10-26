@@ -1,4 +1,4 @@
-use mime::Mime;
+use mime::{APPLICATION_JSON, Mime};
 use serde::{Deserialize, Serialize};
 
 use crate::types::{
@@ -9,13 +9,16 @@ use serde_json::Error as JsonError;
 
 pub struct Json<T>(pub T);
 
+impl<T> Json<T> {
+    pub fn into_inner(self) -> T {
+        self.0
+    }
+}
+
 impl<T> ContentType for Json<T> {
     const NAME: &str = "json";
-    fn content_type(mime: &Mime) -> bool {
-        matches!(
-            (mime.type_().as_str(), mime.subtype().as_str()),
-            ("application", "json")
-        )
+    fn content_type() -> Mime {
+        APPLICATION_JSON
     }
 }
 impl<T: Serialize> SerializeResponder for Json<T> {

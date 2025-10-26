@@ -1,51 +1,15 @@
 use actix_web::{
-    App, HttpServer, get,
-    web::{Data, Path, ThinData},
+    App, HttpServer,
+    web::{Data, ThinData},
 };
-use audio_data::prelude::*;
-use backend::{config::Config, prelude::PoolManager, types::Serde};
+use backend::{
+    config::Config,
+    routes::{authors, posts},
+};
 use diesel::{
-    PgConnection, QueryDsl, RunQueryDsl, SelectableHelper,
+    PgConnection,
     r2d2::{ConnectionManager, Pool},
 };
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-
-#[get("/scripts/{content_id}")]
-async fn get_script(
-    content_id: Path<Uuid>,
-    database: ThinData<PoolManager<PgConnection>>,
-) -> Serde<Content<Script>> {
-    use audio_data::schema::content::dsl::*;
-
-    let result = content
-        .find(content_id.into_inner())
-        .select(Content::<Script>::as_select())
-        .first(&mut database.get().unwrap())
-        .expect("Error loading posts");
-
-    Serde(result)
-}
-
-#[get("/audios/{id}/name")]
-async fn get_audio(
-    content_id: Path<Uuid>,
-    database: ThinData<PoolManager<PgConnection>>,
-) -> Serde<Content<Audio>> {
-    use audio_data::schema::content::dsl::*;
-    let result = content
-        .find(content_id.into_inner())
-        .select(Content::<Audio>::as_select())
-        .first(&mut database.get().unwrap())
-        .expect("Error loading posts");
-
-    Serde(result)
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct Hello {
-    hi: String,
-}
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
@@ -63,8 +27,8 @@ async fn main() -> anyhow::Result<()> {
         App::new()
             .app_data(ThinData(pool.clone()))
             .app_data(config.clone())
-            .service(get_script)
-            .service(get_audio)
+            .configure(authors::author_routes)
+            .configure(posts::post_routes)
     })
     .bind(address)?
     .run()

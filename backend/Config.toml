@@ -3,11 +3,8 @@ address = "127.0.0.1:8888"
 database_url = "postgres://freyja-moth@localhost/audio"
 default_mime = "text/ron"
 
-[content.script]
-allowed_mimes = [ "application/json" ]
-
-[content.audio]
+[content_rules.audio]
 allowed_mimes = [ "audio/mpeg" ]
 
-[content.script]
+[content_rules.script]
 allowed_mimes = [ "text/markdown" ]

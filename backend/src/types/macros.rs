@@ -12,7 +12,7 @@ macro_rules! impl_responder_for_serialized_responder {
                 ) -> ::actix_web::HttpResponse<Self::Body> {
                     match self.serialize() {
                         Ok(body) => match ::actix_web::HttpResponse::Ok()
-                            .content_type(mime::APPLICATION_JSON)
+                            .content_type(<$name<T> as $crate::types::ContentType>::content_type())
                             .message_body(body)
                         {
                             Ok(res) => res.map_into_left_body(),
@@ -178,7 +178,7 @@ Request path: {}",
             impl<T: ::serde::de::DeserializeOwned> [<$name Body>]<T> {
                 pub fn new(req: &::actix_web::HttpRequest, payload: &mut ::actix_web::dev::Payload, content_type_required: bool) -> Self {
                     match <::actix_web::HttpRequest as ::actix_web::HttpMessage>::mime_type(req) {
-                        ::std::result::Result::Ok(::std::option::Option::Some(mime)) if $name::<T>::content_type(&mime) => {}
+                        ::std::result::Result::Ok(::std::option::Option::Some(mime)) if <$name<T> as $crate::types::ContentType>::content_type() == mime => {}
                         ::std::result::Result::Ok(_) if !content_type_required => {}
                         _ => {
                             return Self::Error(::std::option::Option::Some(
