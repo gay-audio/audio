@@ -24,5 +24,21 @@ pub trait Component {
 }
 
 pub trait RawComponent {
+    /// # Safety
+    ///
+    /// Caller must guarentee that the underlying type of [`event`] is the same as [`<Self as
+    /// Component>::Event`]
     unsafe fn update_unchecked(&mut self, event: &dyn Any);
+}
+
+impl<C> RawComponent for C
+where
+    C: Component,
+    C::Event: 'static,
+{
+    unsafe fn update_unchecked(&mut self, event: &dyn Any) {
+        assert!(event.is::<C::Event>());
+
+        self.update(event.downcast_ref().unwrap());
+    }
 }

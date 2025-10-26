@@ -1,4 +1,7 @@
-use desktop::{components::Component, event::Update};
+use desktop::{
+    components::{Component, RawComponent},
+    event::Update,
+};
 
 pub struct Tester;
 impl Component for Tester {
@@ -16,4 +19,10 @@ pub struct State {}
 
 fn main() {
     let mut component = Tester;
+
+    component.update(&Update);
+
+    unsafe {
+        component.update_unchecked(&Update);
+    }
 }
