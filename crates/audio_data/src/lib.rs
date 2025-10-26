@@ -1,5 +1,4 @@
-pub mod author;
-pub mod content;
+pub mod authors;
+pub mod posts;
 pub mod prelude;
 pub mod schema;
-mod sealed;

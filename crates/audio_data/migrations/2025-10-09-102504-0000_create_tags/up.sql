@@ -1,4 +1,0 @@
-CREATE TABLE tags (
-  name VARCHAR(256) PRIMARY KEY,
-  display_name VARCHAR(256) NOT NULL UNIQUE
-);

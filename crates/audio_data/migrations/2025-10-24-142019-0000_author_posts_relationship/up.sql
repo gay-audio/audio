@@ -1,0 +1,1 @@
+ALTER TABLE posts ADD CONSTRAINT author_posts_relationship FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE CASCADE ON UPDATE CASCADE;
