@@ -8,9 +8,13 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
+    #[sea_orm(unique)]
     pub name: String,
-    #[sea_orm(has_many)]
-    pub content_parts: HasMany<super::content_part::Entity>,
+    pub published: bool,
+    #[sea_orm(has_many, via = "content_part")]
+    pub content_part_tags: HasMany<super::content_part_tags::Entity>,
+    #[sea_orm(has_many, via = "content_tags")]
+    pub tags: HasMany<super::tags::Entity>,
 }
 
 impl ActiveModelBehavior for ActiveModel {}
