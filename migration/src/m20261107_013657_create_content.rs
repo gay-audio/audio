@@ -17,7 +17,7 @@ impl MigrationTrait for Migration {
                     .table("content")
                     .if_not_exists()
                     .col(pk_uuid("id").default(Expr::cust("GEN_RANDOM_UUID()")))
-                    .col(string("name"))
+                    .col(string("name").unique_key())
                     .col(boolean("published").default(false))
                     .take(),
             )

@@ -4,11 +4,12 @@ use actix_files::NamedFile;
 use actix_multipart::form::{MultipartForm, json::Json as MpJson, tempfile::TempFile, text::Text};
 use actix_web::{
     Either, HttpResponse, Scope, delete, get, post, put,
-    web::{Data, Json, Path},
+    web::{Data, Json, Path, Query},
 };
+use anyhow::Context;
 use sea_orm::{
     ActiveValue::{NotSet, Set},
-    IntoActiveValue,
+    IntoActiveValue, TransactionTrait,
     prelude::*,
 };
 use serde::Deserialize;
@@ -19,7 +20,7 @@ use crate::{
 };
 
 pub fn content_routes() -> Scope {
-    Scope::new("")
+    Scope::new("/content")
         .service(get_all_content)
         .service(get_content_meta)
         .service(get_content)
@@ -31,13 +32,23 @@ pub fn content_routes() -> Scope {
         .service(delete_content_part)
 }
 
-#[get("/content")]
-async fn get_all_content(data: Data<DatabaseConnection>) -> HttpResponse {
-    let content = content::Entity::load()
-        .with(content_part::Entity)
-        .all(data.get_ref())
-        .await
-        .unwrap();
+#[derive(Deserialize)]
+pub struct ContentQuery {
+    by_name: Option<String>,
+}
+
+#[get("")]
+async fn get_all_content(
+    db: Data<DatabaseConnection>,
+    Query(query): Query<ContentQuery>,
+) -> HttpResponse {
+    let mut base = content::Entity::load().with(content_part::Entity);
+
+    if let Some(by_name) = query.by_name {
+        base = base.filter(content::Column::Name.like(by_name));
+    }
+
+    let content = base.all(db.get_ref()).await.unwrap();
 
     HttpResponse::Ok().json(
         content
@@ -47,14 +58,14 @@ async fn get_all_content(data: Data<DatabaseConnection>) -> HttpResponse {
     )
 }
 
-#[get("/content/{id}/meta")]
-async fn get_content_meta(data: Data<DatabaseConnection>, content: Path<Uuid>) -> HttpResponse {
+#[get("/{id}")]
+async fn get_content_meta(db: Data<DatabaseConnection>, content: Path<Uuid>) -> HttpResponse {
     let content = content.into_inner();
 
     let content = content::Entity::load()
         .with(content_part::Entity)
         .filter(content::Column::Id.eq(content))
-        .one(data.get_ref())
+        .one(db.get_ref())
         .await
         .unwrap();
 
@@ -65,9 +76,9 @@ async fn get_content_meta(data: Data<DatabaseConnection>, content: Path<Uuid>) -
     }
 }
 
-#[get("/content/{id}/{part}")]
+#[get("/{id}/{part}")]
 async fn get_content(
-    data: Data<DatabaseConnection>,
+    db: Data<DatabaseConnection>,
     content: Path<(Uuid, String)>,
 ) -> Either<HttpResponse, NamedFile> {
     let (content, part) = content.into_inner();
@@ -76,7 +87,7 @@ async fn get_content(
         .left_join(content::Entity)
         .filter(content_part::Column::PartType.eq(part))
         .filter(content::Column::Id.eq(content))
-        .one(data.get_ref())
+        .one(db.get_ref())
         .await
         .unwrap();
 
@@ -96,17 +107,18 @@ pub struct CreateContent {
     name: String,
 }
 
-#[post("/content")]
+#[post("")]
 async fn create_content(
-    data: Data<DatabaseConnection>,
+    db: Data<DatabaseConnection>,
     Json(create_content): Json<CreateContent>,
 ) -> HttpResponse {
     let model = content::ActiveModel {
         name: Set(create_content.name),
         id: NotSet,
+        ..Default::default()
     };
     content::Entity::insert(model)
-        .exec(data.get_ref())
+        .exec(db.get_ref())
         .await
         .unwrap();
 
@@ -119,9 +131,9 @@ pub struct CreateContentPartForm {
     file: TempFile,
 }
 
-#[post("/content/{id}/{part}")]
+#[post("/{id}/{part}")]
 async fn create_content_part(
-    data: Data<DatabaseConnection>,
+    db: Data<DatabaseConnection>,
     path: Path<(Uuid, String)>,
     MultipartForm(form): MultipartForm<CreateContentPartForm>,
 ) -> HttpResponse {
@@ -132,19 +144,29 @@ async fn create_content_part(
     } = form;
     let part_id = Uuid::new_v4();
 
-    let model = content_part::ActiveModel {
-        content_id: Set(content_id),
-        part_type: part.into_active_value(),
-        mime_type: Set(mime_type),
-        part_id: Set(part_id),
-    };
+    db.transaction(|transaction| {
+        Box::pin(async move {
+            let model = content_part::ActiveModel {
+                content_id: Set(content_id),
+                part_type: part.into_active_value(),
+                mime_type: Set(mime_type),
+                part_id: Set(part_id),
+                ..Default::default()
+            };
 
-    content_part::Entity::insert(model)
-        .exec(data.get_ref())
-        .await
-        .unwrap();
+            content_part::Entity::insert(model)
+                .exec(transaction)
+                .await
+                .context("Failed to create content part metadata")?;
 
-    fs::copy(file.file.path(), format!("content/{part_id}")).unwrap();
+            fs::copy(file.file.path(), format!("content/{part_id}"))
+                .context("Failed to create content part")?;
+
+            Ok::<(), anyhow::Error>(())
+        })
+    })
+    .await
+    .unwrap();
 
     HttpResponse::Created().finish()
 }
@@ -154,15 +176,15 @@ pub struct UpdateContent {
     name: Option<String>,
 }
 
-#[put("/content/{id}")]
+#[put("/{id}")]
 async fn update_content(
-    data: Data<DatabaseConnection>,
+    db: Data<DatabaseConnection>,
     id: Path<Uuid>,
     Json(update): Json<UpdateContent>,
 ) -> HttpResponse {
     let id = id.into_inner();
     let mut content: content::ActiveModel = content::Entity::find_by_id(id)
-        .one(data.get_ref())
+        .one(db.get_ref())
         .await
         .unwrap()
         .unwrap()
@@ -170,7 +192,7 @@ async fn update_content(
 
     content.name = update.name.into_active_value();
 
-    content.update(data.get_ref()).await.unwrap();
+    content.update(db.get_ref()).await.unwrap();
 
     HttpResponse::Ok().finish()
 }
@@ -187,43 +209,54 @@ pub struct UpdateContentPartForm {
     file: Option<TempFile>,
 }
 
-#[put("/content/{id}/{part_type}")]
+#[put("/{id}/{part_type}")]
 async fn update_content_part(
-    data: Data<DatabaseConnection>,
+    db: Data<DatabaseConnection>,
     path: Path<(Uuid, String)>,
     MultipartForm(update): MultipartForm<UpdateContentPartForm>,
 ) -> HttpResponse {
     let (content_id, part_id) = path.into_inner();
-    if let Some(file) = update.file {
-        fs::copy(file.file.path(), format!("content/{part_id}")).unwrap();
-    }
 
     let meta = update.meta.into_inner();
 
-    let mut content_part: content_part::ActiveModel = content_part::Entity::find()
-        .filter(content_part::Column::ContentId.eq(content_id))
-        .one(data.get_ref())
-        .await
-        .unwrap()
-        .unwrap()
-        .into();
+    db.transaction(|transaction| {
+        Box::pin(async move {
+            let mut content_part: content_part::ActiveModel = content_part::Entity::find()
+                .filter(content_part::Column::ContentId.eq(content_id))
+                .one(transaction)
+                .await?
+                .unwrap()
+                .into();
 
-    content_part.part_type = meta.part_type.into_active_value();
-    content_part.mime_type = meta.mime_type.into_active_value();
+            content_part.part_type = meta.part_type.into_active_value();
+            content_part.mime_type = meta.mime_type.into_active_value();
 
-    content_part.update(data.get_ref()).await.unwrap();
+            content_part
+                .update(transaction)
+                .await
+                .context("Failed to update content part metadata")?;
+
+            if let Some(file) = update.file {
+                fs::copy(file.file.path(), format!("content/{part_id}"))
+                    .context("Failed to update content part")?;
+            }
+            Ok::<(), anyhow::Error>(())
+        })
+    })
+    .await
+    .unwrap();
 
     HttpResponse::Ok().finish()
 }
 
-#[delete("/content/{content_id}")]
-async fn delete_content(data: Data<DatabaseConnection>, id: Path<Uuid>) -> HttpResponse {
+#[delete("/{content_id}")]
+async fn delete_content(db: Data<DatabaseConnection>, id: Path<Uuid>) -> HttpResponse {
     let id = id.into_inner();
 
     let Some(content) = content::Entity::load()
         .with(content_part::Entity)
         .filter(content::Column::Id.eq(id))
-        .one(data.get_ref())
+        .one(db.get_ref())
         .await
         .unwrap()
     else {
@@ -232,30 +265,28 @@ async fn delete_content(data: Data<DatabaseConnection>, id: Path<Uuid>) -> HttpR
 
     for part in content.content_parts.iter().cloned() {
         fs::remove_file(format!("content/{}", part.part_id)).unwrap();
-
-        part.delete(data.get_ref()).await.unwrap();
     }
 
-    content.delete(data.get_ref()).await.unwrap();
+    content.delete(db.get_ref()).await.unwrap();
 
     HttpResponse::Ok().finish()
 }
 
-#[delete("/content/{content_id}/{part_type}")]
+#[delete("/{content_id}/{part_type}")]
 async fn delete_content_part(
-    data: Data<DatabaseConnection>,
+    db: Data<DatabaseConnection>,
     path: Path<(Uuid, String)>,
 ) -> HttpResponse {
     let (content_id, part) = path.into_inner();
     let content_part: content_part::ActiveModel =
         content_part::Entity::find_by_id((content_id, part))
-            .one(data.get_ref())
+            .one(db.get_ref())
             .await
             .unwrap()
             .unwrap()
             .into();
 
-    content_part.delete(data.get_ref()).await.unwrap();
+    content_part.delete(db.get_ref()).await.unwrap();
 
     HttpResponse::Ok().finish()
 }

@@ -11,15 +11,18 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub part_type: String,
     pub mime_type: String,
+    pub published: bool,
     pub part_id: Uuid,
     #[sea_orm(
         belongs_to,
         from = "content_id",
         to = "id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
+        on_update = "Restrict",
+        on_delete = "Cascade"
     )]
     pub content: BelongsTo<super::content::Entity>,
+    #[sea_orm(has_many)]
+    pub content_part_tags: HasMany<super::content_part_tags::Entity>,
 }
 
 impl ActiveModelBehavior for ActiveModel {}

@@ -4,3 +4,6 @@ pub mod prelude;
 
 pub mod content;
 pub mod content_part;
+pub mod content_part_tags;
+pub mod content_tags;
+pub mod tags;

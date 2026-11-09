@@ -2,3 +2,6 @@
 
 pub use super::content::Entity as Content;
 pub use super::content_part::Entity as ContentPart;
+pub use super::content_part_tags::Entity as ContentPartTags;
+pub use super::content_tags::Entity as ContentTags;
+pub use super::tags::Entity as Tags;
